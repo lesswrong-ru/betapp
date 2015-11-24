@@ -37,6 +37,11 @@ def cancel(message):
     send_welcome(message)
 
 
+def done(message):
+    chatState[message.chat.id] = {}
+    bot.send_message(message.chat.id, "Done!", reply_markup=types.ReplyKeyboardHide())
+
+
 ####################### PREDICT #######################
 ## step 1
 @bot.message_handler(commands=['predict'])
@@ -73,18 +78,62 @@ def predict_reminder(message):
     bot.send_message(message.chat.id, "Do you want me to remind you about it? You can type in date if you want", reply_markup=markup)
 
 
-## step 5
-def predict_done(message):
-    chatState[message.chat.id] = {}
-    bot.send_message(message.chat.id, "Done!", reply_markup=types.ReplyKeyboardHide())
 
-# all other messages
+####################### LIST #######################
+@bot.message_handler(commands=['list'])
+def list(message):
+    # todo: load list from server
+    bot.send_message(message.chat.id, "1. Elon Musk will land on the moon. \n"
+                                      "2. This bot is awesome\n"
+                                      "3. Friendly AI will like kittens more than people\n"
+                                      "4. Harry Potter will marry Hermione")
+
+
+####################### RESOLVE #######################
+@bot.message_handler(commands=['resolve'])
+## step 1
+def resolve_start(message):
+    chatState[message.chat.id] = { 'state' : 'resolve_start'}
+    bot.send_message(message.chat.id, "Which prediction do you want to resolve? Type in the number:")
+    list(message)
+
+
+## step 2
+def resolve_choose(message):
+    chatState[message.chat.id]['state'] = 'resolve_choose'
+    chatState[message.chat.id]['prediction_id'] = message
+    # todo: load all info from server.
+    bot.send_message(message.chat.id, "So you question was: \"Harry Potter will marry Hermione by tomorrow\" \n"
+                                      "You created this questions 10.11.2015 at 15:45 \n"
+                                      "And you answer was \"YES\" with 80% probability")
+    markup = types.ReplyKeyboardMarkup()
+    markup.row('Correct', 'Incorrect')
+    markup.row('Cancel')
+    bot.send_message(message.chat.id, "Did you guess it right?", reply_markup=markup)
+
+
+## step 3
+def resolve_resolution(message):
+    chatState[message.chat.id]['state'] = 'resolve_resolution'
+    if message.text == 'Cancel':
+        cancel(message)
+    else:
+        chatState[message.chat.id]['prediction_outcome'] = message
+        bot.send_message(message.chat.id, "Ok, we saved that. Good luck next time", reply_markup=types.ReplyKeyboardHide())
+        # todo: save it on the server
+
+
+
+####################### ALL OTHER MESSAGES #######################
 state2handler = {
     'predict_start' : predict_answer,
     'predict_answer': predict_chance,
     'predict_chance': predict_reminder,
-    'predict_reminder': predict_done,
+    'predict_reminder': done,
+    'resolve_start': resolve_choose,
+    'resolve_choose': resolve_resolution,
 }
+
 
 @bot.message_handler(func=lambda message: True)
 def unrecognized(message):
