@@ -1,14 +1,20 @@
 import telebot
 import sys
+import requests
 from telebot import types
-
+import json
 
 telegramToken = sys.argv[1]
+serverHost = sys.argv[2]
+serverPort = sys.argv[3]
+
 bot = telebot.TeleBot(telegramToken)
 chatState = {}
 
+
 def log_message(message):
     print message
+
 
 ####################### START #######################
 @bot.message_handler(commands=['start'])
@@ -16,17 +22,18 @@ def send_welcome(message):
     bot.send_message(message.chat.id, "Good morning friend! What to predict something?")
     send_welcome(message)
     chatState[message.chat.id] = ''
-    #todo add authentification
+    # todo add authentification
+
 
 ####################### HELP #######################
 @bot.message_handler(commands=['help'])
 def send_welcome(message):
     bot.send_message(message.chat.id, "You can do several things. Type: \n"
-                          "/predict - to predict something\n"
-                          "/list - to list your predictions \n"
-                          "/resolve - to resolve one of them\n"
-                          "/cancel - cancel current operation\n"
-                          "Good luck!")
+                                      "/predict - to predict something\n"
+                                      "/list - to list your predictions \n"
+                                      "/resolve - to resolve one of them\n"
+                                      "/cancel - cancel current operation\n"
+                                      "Good luck!")
 
 
 ####################### cancel #######################
@@ -46,16 +53,19 @@ def done(message):
 ## step 1
 @bot.message_handler(commands=['predict'])
 def predict_start(message):
-    chatState[message.chat.id] = { 'state' : 'predict_start'}
+    chatState[message.chat.id] = {'state': 'predict_start'}
     bot.send_message(message.chat.id, "Type something you want to predict")
+
 
 ## step 2
 def predict_answer(message):
     chatState[message.chat.id]['state'] = 'predict_answer'
     chatState[message.chat.id]['question'] = message
     markup = types.ReplyKeyboardMarkup()
-    markup.row('YES', 'NO',)
-    bot.send_message(message.chat.id, "What is your answer? Choose one of the options or type in your answer ", reply_markup=markup)
+    markup.row('YES', 'NO', )
+    bot.send_message(message.chat.id, "What is your answer? Choose one of the options or type in your answer ",
+                     reply_markup=markup)
+
 
 ## step 3
 def predict_chance(message):
@@ -64,7 +74,9 @@ def predict_chance(message):
     markup = types.ReplyKeyboardMarkup()
     markup.row('50%', '60%', '70%')
     markup.row('80%', '90%', '99%')
-    bot.send_message(message.chat.id, "How sure you about it? Choose one of the options or type in your number", reply_markup=markup)
+    bot.send_message(message.chat.id, "How sure you about it? Choose one of the options or type in your number",
+                     reply_markup=markup)
+
 
 ## step 4
 def predict_reminder(message):
@@ -75,25 +87,38 @@ def predict_reminder(message):
     markup.row('1 Day', '1 Week', '1 Month')
     markup.row('No reminder')
     markup.one_time_keyboard = True
-    bot.send_message(message.chat.id, "Do you want me to remind you about it? You can type in date if you want", reply_markup=markup)
-
+    bot.send_message(message.chat.id, "Do you want me to remind you about it? You can type in date if you want",
+                     reply_markup=markup)
 
 
 ####################### LIST #######################
 @bot.message_handler(commands=['list'])
 def list(message):
-    # todo: load list from server
-    bot.send_message(message.chat.id, "1. Elon Musk will land on the moon. \n"
-                                      "2. This bot is awesome\n"
-                                      "3. Friendly AI will like kittens more than people\n"
-                                      "4. Harry Potter will marry Hermione")
+    httpResponse = get_from_server('bets/')
+    # response = json.load(httpResponse);
+    response = httpResponse
+    print response
+    text = ''
+    for element in response:
+        text += str(element['id']) + ". " + element['title']+ "\n";
+
+    bot.send_message(message.chat.id, text)
+
+
+def get_from_server(url):
+    serverUrl = 'http://' + serverHost + ':' + serverPort + '/api/' + url + '?format=json'
+    resp =  requests.get(serverUrl)
+    if resp.status_code != 200:
+        return '{}'
+    return resp.json()
+
 
 
 ####################### RESOLVE #######################
 @bot.message_handler(commands=['resolve'])
 ## step 1
 def resolve_start(message):
-    chatState[message.chat.id] = { 'state' : 'resolve_start'}
+    chatState[message.chat.id] = {'state': 'resolve_start'}
     bot.send_message(message.chat.id, "Which prediction do you want to resolve? Type in the number:")
     list(message)
 
@@ -119,14 +144,14 @@ def resolve_resolution(message):
         cancel(message)
     else:
         chatState[message.chat.id]['prediction_outcome'] = message
-        bot.send_message(message.chat.id, "Ok, we saved that. Good luck next time", reply_markup=types.ReplyKeyboardHide())
+        bot.send_message(message.chat.id, "Ok, we saved that. Good luck next time",
+                         reply_markup=types.ReplyKeyboardHide())
         # todo: save it on the server
-
 
 
 ####################### ALL OTHER MESSAGES #######################
 state2handler = {
-    'predict_start' : predict_answer,
+    'predict_start': predict_answer,
     'predict_answer': predict_chance,
     'predict_chance': predict_reminder,
     'predict_reminder': done,
@@ -146,7 +171,5 @@ def unrecognized(message):
         print message
 
 
-
 print "Start polling..."
 bot.polling()
-
