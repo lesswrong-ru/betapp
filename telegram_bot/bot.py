@@ -13,7 +13,7 @@ chatState = {}
 
 
 def log_message(message):
-    print message
+    print(message)
 
 
 ####################### START #######################
@@ -97,7 +97,7 @@ def list(message):
     httpResponse = get_from_server('bets/')
     # response = json.load(httpResponse);
     response = httpResponse
-    print response
+    print(response)
     text = ''
     for element in response:
         text += str(element['id']) + ". " + element['title']+ "\n";
@@ -167,9 +167,9 @@ def unrecognized(message):
     if chat_id in chatState and 'state' in chatState[chat_id] and chatState[chat_id]['state'] in state2handler:
         state2handler[chatState[chat_id]['state']](message)
     else:
-        print "Don't know how to handle message "
-        print message
+        print("Don't know how to handle message ")
+        print(message)
 
 
-print "Start polling..."
+print("Start polling...")
 bot.polling()
