@@ -3,3 +3,4 @@ bet_server_project/bet_server/.idea/*
 bet_server_project/.idea/*
 .idea/*
 *.pyc
+*.sqlite3
