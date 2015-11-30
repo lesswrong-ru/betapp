@@ -88,9 +88,8 @@ def predict_reminder(message):
 
 ####################### LIST #######################
 @bot.message_handler(commands=['list'])
-def list(message):
+def prediction_list(message):
     httpResponse = get_from_server('bets/')
-    # response = json.load(httpResponse);
     response = httpResponse
     print(response)
     text = ''
@@ -115,7 +114,7 @@ def get_from_server(url):
 def resolve_start(message):
     chatState[message.chat.id] = {'state': 'resolve_start'}
     bot.send_message(message.chat.id, "Which prediction do you want to resolve? Type in the number:")
-    list(message)
+    prediction_list(message)
 
 
 ## step 2
