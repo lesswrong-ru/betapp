@@ -2,7 +2,6 @@ import telebot
 import sys
 import requests
 from telebot import types
-import json
 
 telegramToken = sys.argv[1]
 serverHost = sys.argv[2]
@@ -12,22 +11,18 @@ bot = telebot.TeleBot(telegramToken)
 chatState = {}
 
 
-def log_message(message):
-    print(message)
-
-
 ####################### START #######################
 @bot.message_handler(commands=['start'])
-def send_welcome(message):
+def start(message):
     bot.send_message(message.chat.id, "Good morning friend! What to predict something?")
-    send_welcome(message)
+    send_help(message)
     chatState[message.chat.id] = ''
     # todo add authentification
 
 
 ####################### HELP #######################
 @bot.message_handler(commands=['help'])
-def send_welcome(message):
+def send_help(message):
     bot.send_message(message.chat.id, "You can do several things. Type: \n"
                                       "/predict - to predict something\n"
                                       "/list - to list your predictions \n"
@@ -41,7 +36,7 @@ def send_welcome(message):
 def cancel(message):
     chatState[message.chat.id] = ''
     bot.send_message(message.chat.id, "Canceled", reply_markup=types.ReplyKeyboardHide())
-    send_welcome(message)
+    send_help(message)
 
 
 def done(message):
@@ -100,14 +95,14 @@ def list(message):
     print(response)
     text = ''
     for element in response:
-        text += str(element['id']) + ". " + element['title']+ "\n";
+        text += str(element['id']) + ". " + element['title'] + "\n"
 
     bot.send_message(message.chat.id, text)
 
 
 def get_from_server(url):
     serverUrl = 'http://' + serverHost + ':' + serverPort + '/api/' + url + '?format=json'
-    resp =  requests.get(serverUrl)
+    resp = requests.get(serverUrl)
     if resp.status_code != 200:
         return '{}'
     return resp.json()
