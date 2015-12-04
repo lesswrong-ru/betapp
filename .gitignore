@@ -1,6 +1,20 @@
-telegram_bot/.idea/*
-bet_server_project/bet_server/.idea/*
-bet_server_project/.idea/*
-.idea/*
-*.pyc
+# Byte-compiled / optimized / DLL files
+*/__pycache__
+*.py[cod]
+
+# Distribution / packaging
+*/venv
+*/env
+
+# Temporary files
+*.swo
+*.swp
+
+# Enviroment
+*.env
+
+# DB
 *.sqlite3
+
+# IDE
+*/idea
