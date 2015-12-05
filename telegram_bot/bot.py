@@ -129,7 +129,8 @@ def resolve_choose(message):
     chatState[message.chat.id]['prediction_id'] = message
     prediction = make_request_to_server(message.text)
     bot.send_message(message.chat.id,
-                     "So your prediction was:\n{}".format(prediction['title']))
+                     "So your prediction was:\n{}".format(
+                         prediction['data']['title']))
     markup = types.ReplyKeyboardMarkup()
     markup.row('Correct', 'Incorrect')
     markup.row('Cancel')
