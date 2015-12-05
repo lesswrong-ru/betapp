@@ -1,7 +1,8 @@
 import telebot
+from telebot import types
+
 import sys
 import requests
-from telebot import types
 
 telegramToken = sys.argv[1]
 serverHost = sys.argv[2]
@@ -9,6 +10,13 @@ serverPort = sys.argv[3]
 
 bot = telebot.TeleBot(telegramToken)
 chatState = {}
+serverUrl = 'http://' + serverHost + ':' + serverPort + '/api/bets/{}?format=json'
+
+
+def make_request_to_server(id='', method='GET', data={}):
+    url = serverUrl.format(id)
+    resp = requests.request(method, url, data=data)
+    return {'code': resp.status_code, 'data': resp.json()}
 
 
 ####################### START #######################
@@ -39,9 +47,17 @@ def cancel(message):
     send_help(message)
 
 
-def done(message):
+def save_prediction(message):
+    chat_id = message.chat.id
+    response = make_request_to_server(method="POST",
+                                      data={'title': chatState[chat_id]['prediction'],
+                                            'confidence': chatState[chat_id]['chance']})
+    if response['code'] == 201:
+        text = 'Done!'
+    else:
+        text = 'Fail!'
+    bot.send_message(chat_id, text, reply_markup=types.ReplyKeyboardHide())
     chatState[message.chat.id] = {}
-    bot.send_message(message.chat.id, "Done!", reply_markup=types.ReplyKeyboardHide())
 
 
 ####################### PREDICT #######################
@@ -55,7 +71,7 @@ def predict_start(message):
 ## step 2
 def predict_answer(message):
     chatState[message.chat.id]['state'] = 'predict_answer'
-    chatState[message.chat.id]['question'] = message
+    chatState[message.chat.id]['prediction'] = message.text
     markup = types.ReplyKeyboardMarkup()
     markup.row('YES', 'NO', )
     bot.send_message(message.chat.id, "What is your answer? Choose one of the options or type in your answer ",
@@ -65,7 +81,7 @@ def predict_answer(message):
 ## step 3
 def predict_chance(message):
     chatState[message.chat.id]['state'] = 'predict_chance'
-    chatState[message.chat.id]['answer'] = message
+    chatState[message.chat.id]['answer'] = message.text
     markup = types.ReplyKeyboardMarkup()
     markup.row('50%', '60%', '70%')
     markup.row('80%', '90%', '99%')
@@ -76,7 +92,7 @@ def predict_chance(message):
 ## step 4
 def predict_reminder(message):
     chatState[message.chat.id]['state'] = 'predict_reminder'
-    chatState[message.chat.id]['chance'] = message
+    chatState[message.chat.id]['chance'] = message.text[:-1]
     markup = types.ReplyKeyboardMarkup()
     markup.row('1 Hour', '6 Hours', '12 Hours')
     markup.row('1 Day', '1 Week', '1 Month')
@@ -89,23 +105,13 @@ def predict_reminder(message):
 ####################### LIST #######################
 @bot.message_handler(commands=['list'])
 def prediction_list(message):
-    httpResponse = get_from_server('bets/')
-    response = httpResponse
+    response = make_request_to_server()
     print(response)
     text = ''
-    for element in response:
-        text += str(element['id']) + ". " + element['title'] + "\n"
+    for element in response['data']:
+        text += '{}. {}\n'.format(element['id'], element['title'])
 
     bot.send_message(message.chat.id, text)
-
-
-def get_from_server(url):
-    serverUrl = 'http://' + serverHost + ':' + serverPort + '/api/' + url + '?format=json'
-    resp = requests.get(serverUrl)
-    if resp.status_code != 200:
-        return '{}'
-    return resp.json()
-
 
 
 ####################### RESOLVE #######################
@@ -121,10 +127,9 @@ def resolve_start(message):
 def resolve_choose(message):
     chatState[message.chat.id]['state'] = 'resolve_choose'
     chatState[message.chat.id]['prediction_id'] = message
-    # todo: load all info from server.
-    bot.send_message(message.chat.id, "So you question was: \"Harry Potter will marry Hermione by tomorrow\" \n"
-                                      "You created this questions 10.11.2015 at 15:45 \n"
-                                      "And you answer was \"YES\" with 80% probability")
+    prediction = make_request_to_server(message.text)
+    bot.send_message(message.chat.id,
+                     "So your prediction was:\n{}".format(prediction['title']))
     markup = types.ReplyKeyboardMarkup()
     markup.row('Correct', 'Incorrect')
     markup.row('Cancel')
@@ -148,7 +153,7 @@ state2handler = {
     'predict_start': predict_answer,
     'predict_answer': predict_chance,
     'predict_chance': predict_reminder,
-    'predict_reminder': done,
+    'predict_reminder': save_prediction,
     'resolve_start': resolve_choose,
     'resolve_choose': resolve_resolution,
 }
