@@ -201,6 +201,7 @@ def unrecognized(message):
     if chat_id in chatState and 'state' in chatState[chat_id] and chatState[chat_id]['state'] in state2handler:
         state2handler[chatState[chat_id]['state']](message)
     else:
+        start(message)
         print("Don't know how to handle message ")
         print(message)
 
