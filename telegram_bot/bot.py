@@ -10,7 +10,7 @@ serverPort = sys.argv[3]
 
 bot = telebot.TeleBot(telegramToken)
 chatState = {}
-serverUrl = 'http://' + serverHost + ':' + serverPort + '/api/bets/{}?format=json'
+serverUrl = 'http://' + serverHost + ':' + serverPort + '/api/bets/{}'
 
 
 def make_request_to_server(id='', method='GET', data={}):
@@ -163,7 +163,6 @@ state2handler = {
 @bot.message_handler(func=lambda message: True)
 def unrecognized(message):
     chat_id = message.chat.id
-    # if chatState[chat_id] and chatState[chat_id]['state'] and state2handler[chatState[chat_id]['state']]:
     if chat_id in chatState and 'state' in chatState[chat_id] and chatState[chat_id]['state'] in state2handler:
         state2handler[chatState[chat_id]['state']](message)
     else:
