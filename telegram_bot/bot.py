@@ -3,6 +3,7 @@ from telebot import types
 
 import sys
 import requests
+from requests import RequestException, HTTPError
 
 telegramToken = sys.argv[1]
 serverHost = sys.argv[2]
@@ -16,7 +17,8 @@ serverUrl = 'http://' + serverHost + ':' + serverPort + '/api/bets/{}'
 def make_request_to_server(id='', method='GET', data={}):
     url = serverUrl.format(id)
     resp = requests.request(method, url, data=data)
-    return {'code': resp.status_code, 'data': resp.json()}
+    resp.raise_for_status()
+    return resp.json()
 
 
 ####################### START #######################
@@ -49,13 +51,13 @@ def cancel(message):
 
 def save_prediction(message):
     chat_id = message.chat.id
-    response = make_request_to_server(method="POST",
-                                      data={'title': chatState[chat_id]['prediction'],
-                                            'confidence': chatState[chat_id]['chance']})
-    if response['code'] == 201:
+    try:
+        make_request_to_server(method="POST",
+                               data={'title': chatState[chat_id]['prediction'],
+                                     'confidence': chatState[chat_id]['chance']})
         text = 'Done!'
-    else:
-        text = 'Fail!'
+    except RequestException:
+        text = 'Something went wrong.'
     bot.send_message(chat_id, text, reply_markup=types.ReplyKeyboardHide())
     chatState[message.chat.id] = {}
 
@@ -88,11 +90,34 @@ def predict_chance(message):
     bot.send_message(message.chat.id, "How sure you about it? Choose one of the options or type in your number",
                      reply_markup=markup)
 
+## step 3.5
+def check_chance(message):
+    chance_str = message.text
+    is_percentage = False
+    if chance_str.endswith('%'):
+        chance_str = chance_str[:-1]
+        is_percentage = True
+
+    try:
+        chance = float(chance_str)
+
+        if is_percentage:
+            chance /= 100
+
+        if chance < 0 or chance > 1:
+            bot.send_message(message.chat.id,
+                             "Probability should be in interval from 0 to 1. Try again.")
+        else:
+            chatState[message.chat.id]['chance'] = chance
+            predict_reminder(message)
+
+    except ValueError:
+        bot.send_message(message.chat.id, "You should type proper number. Try again.")
+
 
 ## step 4
 def predict_reminder(message):
     chatState[message.chat.id]['state'] = 'predict_reminder'
-    chatState[message.chat.id]['chance'] = message.text[:-1]
     markup = types.ReplyKeyboardMarkup()
     markup.row('1 Hour', '6 Hours', '12 Hours')
     markup.row('1 Day', '1 Week', '1 Month')
@@ -105,12 +130,14 @@ def predict_reminder(message):
 ####################### LIST #######################
 @bot.message_handler(commands=['list'])
 def prediction_list(message):
-    response = make_request_to_server()
-    print(response)
-    text = ''
-    for element in response['data']:
-        text += '{}. {}\n'.format(element['id'], element['title'])
-
+    try:
+        response = make_request_to_server()
+        text = ''
+        for element in response:
+            text += '{}. {}\n'.format(element['id'], element['title'])
+        print(response)
+    except RequestException:
+        text = "Something went wrong."
     bot.send_message(message.chat.id, text)
 
 
@@ -127,14 +154,21 @@ def resolve_start(message):
 def resolve_choose(message):
     chatState[message.chat.id]['state'] = 'resolve_choose'
     chatState[message.chat.id]['prediction_id'] = message
-    prediction = make_request_to_server(message.text)
-    bot.send_message(message.chat.id,
-                     "So your prediction was:\n{}".format(
-                         prediction['data']['title']))
-    markup = types.ReplyKeyboardMarkup()
-    markup.row('Correct', 'Incorrect')
-    markup.row('Cancel')
-    bot.send_message(message.chat.id, "Did you guess it right?", reply_markup=markup)
+    try:
+        prediction = make_request_to_server(message.text)
+        bot.send_message(message.chat.id,
+                         "So your prediction was:\n{}".format(
+                             prediction['title']))
+        markup = types.ReplyKeyboardMarkup()
+        markup.row('Correct', 'Incorrect')
+        markup.row('Cancel')
+        bot.send_message(message.chat.id, "Did you guess it right?", reply_markup=markup)
+    except RequestException as e:
+        if type(e) == HTTPError and e.response.status_code == 404:
+            bot.send_message(message.chat.id, "There is no prediction with such number.")
+            cancel(message)
+        else:
+            bot.send_message(message.chat.id, "Something went wrong.")
 
 
 ## step 3
@@ -153,7 +187,8 @@ def resolve_resolution(message):
 state2handler = {
     'predict_start': predict_answer,
     'predict_answer': predict_chance,
-    'predict_chance': predict_reminder,
+    'predict_chance': check_chance,
+    'check_chance': check_chance,
     'predict_reminder': save_prediction,
     'resolve_start': resolve_choose,
     'resolve_choose': resolve_resolution,
