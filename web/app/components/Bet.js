@@ -3,8 +3,11 @@ import React from 'react';
 export default function (props) {
   return (
     <li>
+      <button onClick={props.onRemove}>x</button>
+      {' '}
       {props.title}
-      <button onClick={props.onRemove}>(remove)</button>
+      {' '}
+      ({props.confidence})
     </li>
   );
 };

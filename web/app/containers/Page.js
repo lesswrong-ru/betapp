@@ -36,7 +36,7 @@ class Page extends Component {
           posting={props.newBet.posting}
           onOpen={() => dispatch(openNewBetForm())}
           onCancel={() => dispatch(cancelNewBetForm())}
-          onSubmit={(title) => dispatch(submitNewBet(title))}
+          onSubmit={(title, confidence) => dispatch(submitNewBet(title, confidence))}
         />
         <div>
           <h1>Open bets</h1>

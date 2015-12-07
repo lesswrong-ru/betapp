@@ -10,7 +10,8 @@ export default class NewBet extends Component {
 
   submitForm() {
     const title = this.refs.title.value.trim();
-    this.props.onSubmit(title);
+    const confidence = this.refs.confidence.value.trim();
+    this.props.onSubmit(title, confidence);
   }
 
   render() {
@@ -18,6 +19,7 @@ export default class NewBet extends Component {
       return (
         <div>
           <input type='text' ref='title' disabled={this.props.posting} />
+          <input type='text' ref='confidence' disabled={this.props.posting} />
           <button onClick={this.submitForm} disabled={this.props.posting}>
             Submit
           </button>

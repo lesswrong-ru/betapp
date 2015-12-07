@@ -60,20 +60,19 @@ export function fetchBets() {
 };
 
 export const SUBMIT_NEW_BET = 'SUBMIT_NEW_BET';
-export function submitNewBet(title) {
+export function submitNewBet(title, confidence) {
   return function(dispatch) {
     dispatch({
       type: SUBMIT_NEW_BET,
       status: 'initiated',
+      title, confidence,
     });
     return fetch('http://localhost:8000/api/bets/?format=json', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        title: title,
-      })
+      body: JSON.stringify({title, confidence})
     })
     .then(response => response.json())
     .then(json => {
