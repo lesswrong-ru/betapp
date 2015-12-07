@@ -33,6 +33,7 @@ class Page extends Component {
         <MainHeader/>
         <NewBet
           open={props.newBet.open}
+          posting={props.newBet.posting}
           onOpen={() => dispatch(openNewBetForm())}
           onCancel={() => dispatch(cancelNewBetForm())}
           onSubmit={(title) => dispatch(submitNewBet(title))}
@@ -40,8 +41,8 @@ class Page extends Component {
         <div>
           <h1>Open bets</h1>
           <BetList
-            loading={props.betsFetching}
-            bets={props.bets}
+            loading={props.bets.fetching}
+            bets={props.bets.items}
             onRemove={(id) => dispatch(removeBet(id))}
           />
         </div>

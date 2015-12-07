@@ -6,7 +6,7 @@ import {createStore, applyMiddleware} from 'redux';
 import thunkMiddleware from 'redux-thunk';
 import createLogger from 'redux-logger';
 
-import betApp from './reducers';
+import betApp from './reducers/index';
 import Page from './containers/Page';
 
 const loggerMiddleware = createLogger();

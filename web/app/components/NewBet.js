@@ -17,9 +17,13 @@ export default class NewBet extends Component {
     if (this.props.open) {
       return (
         <div>
-          <input type='text' ref='title'/>
-          <button onClick={this.submitForm}>Submit</button>
-          <button onClick={this.props.onCancel}>Cancel</button>
+          <input type='text' ref='title' disabled={this.props.posting} />
+          <button onClick={this.submitForm} disabled={this.props.posting}>
+            Submit
+          </button>
+          <button onClick={this.props.onCancel} disabled={this.props.posting}>
+            Cancel
+          </button>
         </div>
       );
     }
