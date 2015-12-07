@@ -1,7 +1,7 @@
-import React from 'react';
+import React, {Component} from 'react';
 import {connect} from 'react-redux';
 
-import {signIn, openNewBetForm, cancelNewBetForm, submitNewBet} from '../actions';
+import {signIn, openNewBetForm, cancelNewBetForm, removeBet, submitNewBet, fetchBets} from '../actions';
 
 import Unsigned from '../components/Unsigned';
 import MainHeader from '../components/MainHeader';
@@ -12,54 +12,46 @@ const CompletedBets = function (props) {
   return <h1>Completed bets (TODO)</h1>;
 };
 
-const Page = function (props) {
-  const { dispatch, signedIn, newBet } = props;
-  if (!signedIn) {
-    return (
-      <Unsigned
-        signIn={() => dispatch(signIn())}
-      />
-    );
+class Page extends Component {
+  componentDidMount () {
+    this.props.dispatch(fetchBets());
   }
 
-  return (
-    <div>
-      <MainHeader/>
-      <NewBet
-        open={newBet.open}
-        onOpen={() => dispatch(openNewBetForm())}
-        onCancel={() => dispatch(cancelNewBetForm())}
-        onSubmit={(title) => dispatch(submitNewBet(title))}
-      />
-      <div>
-        <h1>Open bets</h1>
-        <BetList
-          bets={
-            [
-              {
-                title: '2+2=4'
-              },
-              {
-                title: 'CRISPR will kill everyone in 10 years'
-              }
-            ]
-          }
+  render () {
+    const props = this.props;
+    const { dispatch } = props;
+    if (!props.signedIn) {
+      return (
+        <Unsigned
+          signIn={() => dispatch(signIn())}
         />
-      </div>
+      );
+    }
+
+    return (
       <div>
-        <h1>Completed bets</h1>
-        (TODO)
+        <MainHeader/>
+        <NewBet
+          open={props.newBet.open}
+          onOpen={() => dispatch(openNewBetForm())}
+          onCancel={() => dispatch(cancelNewBetForm())}
+          onSubmit={(title) => dispatch(submitNewBet(title))}
+        />
+        <div>
+          <h1>Open bets</h1>
+          <BetList
+            loading={props.betsFetching}
+            bets={props.bets}
+            onRemove={(id) => dispatch(removeBet(id))}
+          />
+        </div>
+        <div>
+          <h1>Completed bets</h1>
+          (TODO)
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 };
 
-function select(state) {
-  const {signedIn, newBet} = state;
-  return {
-    signedIn,
-    newBet
-  };
-}
-
-export default connect(select)(Page);
+export default connect(state => state)(Page);

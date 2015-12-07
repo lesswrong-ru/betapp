@@ -1,12 +1,12 @@
-import { SIGN_IN, OPEN_NEW_BET_FORM, CANCEL_NEW_BET_FORM, SUBMIT_NEW_BET } from './actions';
+import { SIGN_IN, OPEN_NEW_BET_FORM, CANCEL_NEW_BET_FORM, SUBMIT_NEW_BET, FETCH_BETS } from './actions';
 
 const mockState = {
   signedIn: false,
   newBet: {
     open: false,
   },
-  open: [],
-  completed: [],
+  bets: [],
+  betsFetching: false,
 };
 
 export default function (state=mockState, action) {
@@ -16,6 +16,22 @@ export default function (state=mockState, action) {
         ...state,
         signedIn: true
       };
+    case FETCH_BETS:
+      switch (action.status) {
+        case 'success':
+          return {
+            ...state,
+            bets: action.bets,
+            betsFetching: false,
+          };
+        case 'initiated':
+          return {
+            ...state,
+            betsFetching: true,
+          };
+        default:
+          return state;
+      }
     case OPEN_NEW_BET_FORM:
       return {
         ...state,
@@ -33,8 +49,19 @@ export default function (state=mockState, action) {
         }
       };
     case SUBMIT_NEW_BET:
-      console.log('SUBMIT_NEW_BET: ' + action.title);
-      return state;
+      switch (action.status) {
+        case 'initiated':
+          return state; // TODO - disable form
+        case 'success':
+          return {
+            ...state,
+            newBet: {
+              open: false,
+            }
+          }
+        default:
+          return state;
+      }
     default:
       return state;
   }
