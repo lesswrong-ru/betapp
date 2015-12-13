@@ -18,7 +18,10 @@ def make_request_to_server(id='', method='GET', data={}):
     url = serverUrl.format(id)
     resp = requests.request(method, url, data=data)
     resp.raise_for_status()
-    return resp.json()
+    try:
+        return resp.json()
+    except ValueError:
+        return None
 
 
 ####################### START #######################
@@ -90,6 +93,7 @@ def predict_chance(message):
     bot.send_message(message.chat.id, "How sure you about it? Choose one of the options or type in your number",
                      reply_markup=markup)
 
+
 ## step 3.5
 def check_chance(message):
     chance_str = message.text
@@ -153,7 +157,7 @@ def resolve_start(message):
 ## step 2
 def resolve_choose(message):
     chatState[message.chat.id]['state'] = 'resolve_choose'
-    chatState[message.chat.id]['prediction_id'] = message
+    chatState[message.chat.id]['prediction_id'] = message.text
     try:
         prediction = make_request_to_server(message.text)
         bot.send_message(message.chat.id,
@@ -174,13 +178,32 @@ def resolve_choose(message):
 ## step 3
 def resolve_resolution(message):
     chatState[message.chat.id]['state'] = 'resolve_resolution'
-    if message.text == 'Cancel':
-        cancel(message)
+
+    if message.text.lower() in ['y', 'yes', 'correct', 'right']:
+        outcome = True
+    elif message.text.lower() in ['n', 'no', 'incorrect']:
+        outcome = False
     else:
-        chatState[message.chat.id]['prediction_outcome'] = message
-        bot.send_message(message.chat.id, "Ok, we saved that. Good luck next time",
+        if message.text.lower() != 'cancel':
+            bot.send_message(message.chat.id, "Cannot interpret your answer",
+                             reply_markup=types.ReplyKeyboardHide())
+        cancel(message)
+        return
+
+    chatState[message.chat.id]['prediction_outcome'] = outcome
+    try:
+        make_request_to_server(
+            chatState[message.chat.id]['prediction_id'],
+            method="PATCH",
+            data={'outcome': outcome})
+    except RequestException:
+        bot.send_message(message.chat.id, "Something went wrong.",
                          reply_markup=types.ReplyKeyboardHide())
-        # todo: save it on the server
+        cancel(message)
+        return
+
+    bot.send_message(message.chat.id, "Ok, we saved that. Good luck next time",
+                     reply_markup=types.ReplyKeyboardHide())
 
 
 ####################### ALL OTHER MESSAGES #######################
