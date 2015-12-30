@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "webpack-dev-server --content-base public --hot",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Vyacheslav Matyukhin <me@berekuk.ru>",
