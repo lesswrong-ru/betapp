@@ -1,6 +1,10 @@
 # API
 
-## POST /bet
+All URLs start with `/api`.
+
+## POST /bets
+
+Create a bet.
 
 POST body example:
 
@@ -12,10 +16,15 @@ POST body example:
 Response:
 
     {
-        "id": 1
+        "id": 13,
+        "title": "The coin will come up a head",
+        "confidence": 0.8,
+        "outcome": null
     }
 
-## GET /bet
+## GET /bets
+
+Get the list of all bets.
 
 Response:
 
@@ -23,20 +32,25 @@ Response:
         {
             "id": 1,
             "title": "The coin will come up a head",
-            "confidence": 0.8
+            "confidence": 0.8,
+            "outcome": null,
         },
         {
             "id": 2,
             "title": "Another prediction",
-            "confidence": 0.8
+            "confidence": 0.8,
+            "outcome": true
         }
     ]
 
-## GET /bet/1
+## DELETE /bets/123
 
-Response:
+Remove a bet.
 
-    {
-        "title": "The coin will come up a head",
-        "confidence": 0.8
-    }
+Response: HTTP 204 code, no content.
+
+## PATCH /bets/123
+
+Edit a bet data.
+
+Response: HTTP 204 code on success, HTTP 400 bad request on failure.
