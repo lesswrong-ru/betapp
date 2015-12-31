@@ -1,19 +1,25 @@
-export const SIGN_IN = 'SIGN_IN';
-export const OPEN_NEW_BET_FORM = 'OPEN_NEW_BET_FORM';
-export const CANCEL_NEW_BET_FORM = 'CANCEL_NEW_BET_FORM';
+export const INTERNAL_ERROR = 'INTERNAL_ERROR';
+export function internalError() {
+  return {
+    type: INTERNAL_ERROR
+  }
+};
 
+export const SIGN_IN = 'SIGN_IN';
 export function signIn() {
   return {
     type: SIGN_IN
   }
 };
 
+export const OPEN_NEW_BET_FORM = 'OPEN_NEW_BET_FORM';
 export function openNewBetForm() {
   return {
     type: OPEN_NEW_BET_FORM
   }
 };
 
+export const CANCEL_NEW_BET_FORM = 'CANCEL_NEW_BET_FORM';
 export function cancelNewBetForm() {
   return {
     type: CANCEL_NEW_BET_FORM
@@ -81,6 +87,40 @@ export function submitNewBet(title, confidence) {
         () =>
         dispatch({
           type: SUBMIT_NEW_BET,
+          status: 'success',
+        })
+      )
+    })
+  };
+};
+
+export const RESOLVE_BET = 'RESOLVE_BET';
+export function resolveBet(id, outcome) {
+  // TODO - validate that `id` is a number
+  return function(dispatch) {
+    dispatch({
+      type: RESOLVE_BET,
+      status: 'initiated',
+      id,
+    });
+    return fetch(`http://localhost:8000/api/bets/${id}?format=json`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({outcome})
+    })
+    .then(response => {
+      if (response.status != 204) {
+        dispatch(internalError());
+        return;
+      }
+
+      dispatch(fetchBets())
+      .then(
+        () =>
+        dispatch({
+          type: RESOLVE_BET,
           status: 'success',
         })
       )

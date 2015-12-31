@@ -11,6 +11,7 @@ export default function (props) {
             {...bet}
             key={bet.id}
             onRemove={() => props.onRemove(bet.id)}
+            onResolve={(outcome) => props.onResolve(bet.id, outcome)}
           />
         )}
       </ul>

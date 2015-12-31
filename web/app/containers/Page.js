@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
 
-import {signIn, openNewBetForm, cancelNewBetForm, removeBet, submitNewBet, fetchBets} from '../actions';
+import {signIn, openNewBetForm, cancelNewBetForm, removeBet, resolveBet, submitNewBet, fetchBets} from '../actions';
 
 import Unsigned from '../components/Unsigned';
 import MainHeader from '../components/MainHeader';
@@ -44,6 +44,7 @@ class Page extends Component {
             loading={props.bets.fetching}
             bets={props.bets.items}
             onRemove={(id) => dispatch(removeBet(id))}
+            onResolve={(id, outcome) => dispatch(resolveBet(id, outcome))}
           />
         </div>
         <div>

@@ -8,6 +8,8 @@ export default function (props) {
       {props.title}
       {' '}
       ({props.confidence})
+      <button onClick={() => props.onResolve(true)}>y</button>
+      <button onClick={() => props.onResolve(false)}>n</button>
     </li>
   );
 };
